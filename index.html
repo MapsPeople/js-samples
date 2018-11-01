@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyCZcMPwn88IsQgBH7lh1zJM0mUja5RY1XM"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyAou_3CoLqEbuFr-r-KwHbKwppPmKRLhto"></script>
     <title>Document</title>
     <style>
         * {
@@ -104,7 +104,6 @@
         }
     </style>
 </head>
-<!-- 5849380bfb112d0de0573920/api/directions//stpierre_p_stpierre?origin=50.8359429%2C4.3475758%2C0&destination=50.83470921670853%2C4.348373476063102%2C4&travelMode=walking&mode=walking -->
 
 <body>
     <nav>
@@ -190,10 +189,6 @@
 
         });
 
-        //mapsindoors.DirectionsService.getRoute({ origin: { lat: 34.04028290339452, lng: -118.27072560898525, floor: 10 }, destination: { lat: 34.03982601439455, lng: -118.26948675769358, floor: 20 } }).then(res => {
-        
-        /***************************************************************************/
-
         /* A simple search function. (Debounce delay 500ms) */
         let search = debounce((value) => {
             const list = document.getElementById('search:results');
@@ -245,31 +240,40 @@
 
         function onClick(location) {
 
+            /* Perform a directions request from a fixed outdoor point to the selected location */
             mapsindoors.DirectionsService.getRoute({origin: {lat: 57.0583601, lng: 9.9480611, floor: 0}, destination: {lat: location.geometry.coordinates[1], lng: location.geometry.coordinates[0], floor: location.properties.floor}}).then(res => {
                 dr.setRoute(res.routes[0])
             })
 
+            /* Set floor */ 
             mi.setFloor(location.properties.floor);
+
+            /* Convert to Google LatLng */ 
             latLng = getLatLng(location);
+
+            /* Set an infowindow */ 
             infoWindow.setContent(location.properties.name);
             infoWindow.setPosition(latLng);
             infoWindow.open(googleMap);
+
+            /* Center map */ 
             googleMap.panTo(latLng);
         }
 
+        /* Switch to next part of the currently displayed route */
         function nextLeg() {
             dr.nextLeg();
         }
 
+        /* Switch to previous part of the currently displayed route */
         function previousLeg() {
             dr.previousLeg();
         }
 
-
+        /* Change a random color of the currently displayed route */
         function changeColor() {
             dr.setOptions({ strokeColor: '#' + Math.random().toString(16).substr(2, 6) });
         }
-
 
     </script>
 </body>
