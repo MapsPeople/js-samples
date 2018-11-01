@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyCZcMPwn88IsQgBH7lh1zJM0mUja5RY1XM"></script>
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            width: 264px;
+        }
+
+        nav input.search {
+            width: calc(100% - 20px);
+            font-size: 16px;
+            height: 30px;
+            border-radius: 6px;
+            border: 1px solid grey;
+            padding: 5px;
+            margin: 10px;
+            outline: 0;
+        }
+
+        nav ul.results {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        nav ul.results li {
+            display: flex;
+            align-items: center;
+            margin: 8px;
+        }
+
+        nav ul.results li img {
+            max-width: 40px;
+            margin-right: 8px;
+        }
+
+        nav ul.results li span {
+            overflow: hidden;
+            align-items: baseline;
+        }
+
+        nav ul.results li span h1 {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            margin: 0;
+            font-size: 14px;
+            line-height: 22px;
+            white-space: nowrap;
+        }
+
+
+        nav ul.results li span p {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            margin: 0;
+            font-size: 12px;
+            white-space: nowrap;
+            line-height: 12px;
+        }
+
+        main {
+            width: calc(100% - 264px);
+        }
+
+        @media only screen and (max-width: 600px) {
+            nav {
+                display: none;
+                flex-direction: column;
+                max-height: 100%;
+                width: 0px
+            }
+
+            main {
+                width: calc(100%);
+            }
+        }
+    </style>
+</head>
+<!-- 5849380bfb112d0de0573920/api/directions//stpierre_p_stpierre?origin=50.8359429%2C4.3475758%2C0&destination=50.83470921670853%2C4.348373476063102%2C4&travelMode=walking&mode=walking -->
+
+<body>
+    <nav>
+        <input type="text" class="search" oninput="search(this.value)" />
+        <ul class="results" id="search:results"></ul>
+        <button onclick="nextLeg()">Next</button>
+        <button onclick="previousLeg()">Previous</button>
+        <button onclick="changeColor()">New color</button>
+    </nav>
+    <main id="map:canvas">
+
+    </main>
+    <script>
+        let floorSelector = document.createElement('div');
+
+        /*A new instance of google map is created. */
+        const googleMap = new google.maps.Map(document.getElementById('map:canvas'), {
+            center: { lat: 57.0588552, lng: 9.9468377 },
+            zoom: 15,
+            maxZoom: 21
+        });
+        /*A new instance of MapsIndoors is created. It's created with the google map as an argument. */
+        let mi = new mapsindoors.MapsIndoors({
+            map: googleMap
+            // , 
+            // buildingOutlineOptions: {
+            //     strokeColor: '#123456',
+            //     strokeWeight: 2
+            // }
+        });
+        let dr = new mapsindoors.DirectionsRenderer({ mapsindoors: mi });
+        /* We can now change the map view to show the default venue or pass in a venue id to go to another venue. */
+        mi.setVenue('dda5fd61fedc426d9b45b6fe');
+        mi.fitVenue();
+
+        /* Now we are ready to create the floor selector and add it to the map controls. */
+        new mapsindoors.FloorSelector(floorSelector, mi);
+        googleMap.controls[google.maps.ControlPosition.RIGHT_TOP].push(floorSelector);
+
+        /* Example of how to use labeOptions. */
+        // mi.setLabelOptions({
+        //     style: {align:"left"},
+        //     pixelOffset: {
+        //         width:-10,
+        //         height:-10
+        //     }
+        // });
+
+        /* instance of the google.maps.InfoWindow for displaying callouts on the map */
+        const infoWindow = new google.maps.InfoWindow();
+
+        /* A list of events that can be subscribed to on the MapsIndoors object. */
+
+        /* Will fire when the MapsIndoors initialization is done and the object is ready to be used.*/
+        google.maps.event.addListener(mi, 'ready', (e) => {
+            console.log('ready', e);
+        });
+
+        /* Will fire if the map at some point is changed by calling setMap(map) on the MapsIndoors object */
+        google.maps.event.addListener(mi, 'map_changed', (e) => {
+            console.log('map_changed', e);
+        });
+
+        /* Will fire when the floor is changed either by the floor selector or by calling the setFloor(index) in the MapsIndoors object*/
+        google.maps.event.addListener(mi, 'floor_changed', () => {
+            console.log('floor_changed');
+        });
+
+        /* Will fire when a location or a room polygon is clicked on the map. */
+        google.maps.event.addListener(mi, 'click', (e) => {
+            console.log('click', e);
+            onClick(e);
+        });
+
+        /* Will fire when the venue is changed. */
+        google.maps.event.addListener(mi, 'venue_changed', (e) => {
+            console.log('venue_changed', e);
+        });
+
+        /* Will fire when the building in focus changes. This happens when the map is moved around and another building is in focus on the map. */
+        google.maps.event.addListener(mi, 'building_changed', (e) => {
+            console.log('building_changed', e);
+
+        });
+
+        //mapsindoors.DirectionsService.getRoute({ origin: { lat: 34.04028290339452, lng: -118.27072560898525, floor: 10 }, destination: { lat: 34.03982601439455, lng: -118.26948675769358, floor: 20 } }).then(res => {
+        
+        /***************************************************************************/
+
+        /* A simple search function. (Debounce delay 500ms) */
+        let search = debounce((value) => {
+            const list = document.getElementById('search:results');
+            list.innerHTML = '';
+            if (value > '') {
+                /* The input is used to query the LocationsService and the returned result are displayed as a list */
+                mapsindoors.LocationsService.getLocations({ q: value }).then((locations) => {
+                    locations.forEach(location => {
+                        let displayRule = mi.getDisplayRule(location);
+                        item = document.createElement('li');
+                        list.appendChild(item);
+                        item.innerHTML = '<img src="' + displayRule.icon + '" /><span><h1>' + location.properties.name + '</h1><p>' + location.properties.roomId + '</p></span>';
+
+                        /* When the item in the list are clicked a info window will open at the corresponding location on the map. */
+                        item.onclick = () => { onClick(location) };
+                    });
+                    /* A list of ids is used to filter the map view. */
+                    let filter = locations.map(location => location.id);
+                    /* The filter is applied to the map, and the "fitView" is set to true, so that the map will change the viewport to fit the result. */
+                    mi.filter(filter, true);
+                });
+            } else {
+                /*The filter is cleared by calling the fitler function with no arguments. */
+                mi.filter();
+            }
+        }, 500);
+
+
+        /* Delays the search execution if the input is changed within the delay. */
+        function debounce(fn, delay) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(null, args), delay);
+            }
+        }
+
+        /* Returns the coordinates from a location as a google.maps.LatLngLiteral. */
+        function getLatLng(location) {
+            let coords;
+            if (location.geometry.type === 'Point') {
+                coords = location.geometry.coordinates;
+            } else {
+                coords = location.properties.anchor.coordinates;
+            }
+
+            return { lat: coords[1], lng: coords[0] };
+        }
+
+        function onClick(location) {
+
+            mapsindoors.DirectionsService.getRoute({origin: {lat: 57.0583601, lng: 9.9480611, floor: 0}, destination: {lat: location.geometry.coordinates[1], lng: location.geometry.coordinates[0], floor: location.properties.floor}}).then(res => {
+                dr.setRoute(res.routes[0])
+            })
+
+            mi.setFloor(location.properties.floor);
+            latLng = getLatLng(location);
+            infoWindow.setContent(location.properties.name);
+            infoWindow.setPosition(latLng);
+            infoWindow.open(googleMap);
+            googleMap.panTo(latLng);
+        }
+
+        function nextLeg() {
+            dr.nextLeg();
+        }
+
+        function previousLeg() {
+            dr.previousLeg();
+        }
+
+
+        function changeColor() {
+            dr.setOptions({ strokeColor: '#' + Math.random().toString(16).substr(2, 6) });
+        }
+
+
+    </script>
+</body>
+
+</html>
