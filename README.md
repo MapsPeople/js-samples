@@ -1,6 +1,6 @@
 # Samples for Javascript/Web implementations
 
-This is a [sample website](https://mapsindoors.github.io/js-samples) that demonstrates the common use cases like mapping, search & directions in MapsIndoors Javascript SDK. Please not that the demonstrated SDK is still in beta. 
+This is a [sample website](https://mapsindoors.github.io/js-samples) that demonstrates the common use cases like mapping, search & directions in MapsIndoors Javascript SDK. 
 
 See the [source code for the sample here](https://github.com/MapsIndoors/js-samples).
 

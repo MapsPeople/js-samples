@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyAou_3CoLqEbuFr-r-KwHbKwppPmKRLhto"></script>
+    <script src="https://app.mapsindoors.com/mapsindoors/js/sdk/mapsindoors-3.0.0.js?apiKey=57e4e4992e74800ef8b69718"></script>
+    <title>MapsIndoors Samples for Web</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+        }
+
+        main {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <main id="map:canvas">
+
+    </main>
+    <script>
+
+        var peopleData = new google.maps.Data();
+        let numberOfPeople = 200;
+        let floorSelector = document.createElement('div');
+
+        /*A new instance of google map is created. */
+        const googleMap = new google.maps.Map(document.getElementById('map:canvas'), {
+            center: { lat: 57.0588552, lng: 9.9468377 },
+            zoom: 15,
+            maxZoom: 21
+        });
+
+
+        /*A new instance of MapsIndoors is created. It's created with the google map as an argument. */
+        let mi = new mapsindoors.MapsIndoors({
+            map: googleMap
+            // , 
+            // buildingOutlineOptions: {
+            //     strokeColor: '#123456',
+            //     strokeWeight: 2
+            // }
+        });
+
+        /* We can now change the map view to show the default venue or pass in a venue id to go to another venue. */
+        mi.setVenue('586ca9f0bc1f5702406442b5');
+        mi.fitVenue();
+
+        /* Now we are ready to create the floor selector and add it to the map controls. */
+        new mapsindoors.FloorSelector(floorSelector, mi);
+        googleMap.controls[google.maps.ControlPosition.RIGHT_TOP].push(floorSelector);
+
+        /* Will fire when the MapsIndoors initialization is done and the object is ready to be used.*/
+        google.maps.event.addListener(mi, 'ready', (e) => {
+            console.log('ready', e);
+            setTimeout(createPeople, 200);
+            setInterval(animatePeople, 500);
+        });
+
+        /* Will fire when the floor is changed either by the floor selector or by calling the setFloor(index) in the MapsIndoors object*/
+        google.maps.event.addListener(mi, 'floor_changed', () => {
+            console.log('floor_changed');
+            /* Reset people that is currently displayed */            
+            peopleData.setMap(null);
+            peopleData.setMap(googleMap);
+        });
+            
+        /* Returns 3 different icons */            
+        function getIconForIndex(idx) {
+            let baseUrl = 'http://127.0.0.1:5500/assets/';
+            switch(idx) {
+                case 0 : return baseUrl + 'man.png';
+                case 1 : return baseUrl + 'man2.png';
+                default : return baseUrl + 'user.png';
+            }
+        }
+
+        /* Create a number of people on 2 floors */            
+        function createPeople() {
+            /* Setup data layer */            
+            peopleData.setMap(googleMap);
+            /* Setup styling callback */            
+            peopleData.setStyle(function(feature){
+                return {
+                    //Show only when the corresponding floor is displayed
+                    visible: feature.getProperty('floor') == mi.getFloor(),
+                    //Assign icon from feature
+                    icon: feature.getProperty('icon')
+                }
+            });
+            var center = googleMap.getCenter();
+            for (var i = 0; i < numberOfPeople; i++) {
+                let feature = {
+                    id:i, 
+                    //Save a position. Start at map center
+                    geometry:center, 
+                    //Save some data on the feature
+                    properties: {
+                        //Save a random "walking direction" for the person
+                        direction:Math.random()*360,
+                        //Save a floor index
+                        floor: i < numberOfPeople / 2 ? 0 : 1,
+                        //Save an icon
+                        icon: {
+                            url:getIconForIndex(i % 3),
+                            scaledSize: {width:28, height:28},
+                            anchor: {x:14,y:14} 
+                        }
+                    }
+                };
+                //Add feature to people layer
+                peopleData.add(feature);
+            }
+            
+        }
+
+        //Animate function
+        function animatePeople() {
+            //Loop through each feature in the people layer
+            peopleData.forEach(function(feature) { 
+                //Get current walking direction
+                let oldDirection = feature.getProperty('direction');
+                //Calculate new (drunk man) walking direction
+                let newDirection = (Math.random()*45)-22 + oldDirection;
+                //Save new walking direction
+                feature.setProperty('direction', newDirection);
+                //Calculate offset position for person
+                let newPos = google.maps.geometry.spherical.computeOffset(feature.getGeometry().get(), 0.5, newDirection);
+                //Save new position
+                feature.setGeometry(newPos);
+            });
+        }   
+
+    </script>
+</body>
+
+</html>
