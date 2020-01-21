@@ -242,7 +242,7 @@
         function onClick(location) {
 
             /* Perform a directions request from a fixed outdoor point to the selected location */
-            mapsindoors.DirectionsService.getRoute({origin: {lat: 57.0583601, lng: 9.9480611, floor: 0}, destination: {lat: location.geometry.coordinates[1], lng: location.geometry.coordinates[0], floor: location.properties.floor}}).then(res => {
+            mapsindoors.DirectionsService.getRoute({origin: {lat: 57.0583601, lng: 29.9480611, floor: 0}, destination: {lat: location.geometry.coordinates[1], lng: location.geometry.coordinates[0], floor: location.properties.floor}}).then(res => {
                 dr.setRoute(res.routes[0])
             })
 
